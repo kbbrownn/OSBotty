@@ -2,25 +2,33 @@ package defaultPackage;
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
+import javax.swing.Timer;
 
 
 public class main {
+	
+	static int counter = 5;
+	static int minimizeDelay = 1;
+	static int loopCount = 2;
+	static javax.swing.Timer timer = null;
 
 	public static void main(String[] args) throws AWTException, IOException, InterruptedException {
 		
@@ -51,6 +59,7 @@ public class main {
 		btnCheck.setLocation(350, 350);
 		btnCheck.setPreferredSize(new Dimension(50, 50));
 		btnCheck.addActionListener(new ActionListener() {
+			// user has clicked next signaling the bot to begin
 			public void actionPerformed(ActionEvent e) {
 				try {
 					beginCountdown(frame, pnlCounter, counterLabel, pnlCheck, firstLabel);
@@ -68,26 +77,22 @@ public class main {
 		// get current screen properties
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		int width = gd.getDisplayMode().getWidth();
-		int height = gd.getDisplayMode().getHeight();
-		
-		// setup countdown frame
-
-	
-		
-//		for(i = 0; i < 10000; i++) {
-
-//			mouse.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//			mouse.delay(5);
-//			mouse.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-//		}
-		
-		
-		
+		int height = gd.getDisplayMode().getHeight();	
 	}
+
 	
-	public static void beginCountdown(JFrame frame, JPanel pnlCounter, JLabel counterLabel, JPanel pnlCheck, JLabel firstLabel) throws InterruptedException {
-		Timer timer = new Timer();
+	/**
+	 * Method to display simple gui countdown until bot begins
+	 * @param frame - Mainframe with which to display to
+	 * @param pnlCounter - Panel holding countdown
+	 * @param counterLabel - Label that changes to display each second
+	 * @param pnlCheck - Panel to check if user is ready to begin
+	 * @param firstLabel - First label giving user instructions to begin
+	 * @throws InterruptedException - Throw exception if process is interrupted mid execution
+	 */
+	public static void beginCountdown(final JFrame frame, JPanel pnlCounter, final JLabel counterLabel, JPanel pnlCheck, JLabel firstLabel) throws InterruptedException {
+
+		final Toolkit toolkit;
 		
 		pnlCounter.setLayout(new BorderLayout());
 		counterLabel.setText("Bot is about to begin...");
@@ -100,20 +105,95 @@ public class main {
 		frame.add(pnlCounter);
 		frame.revalidate();
 		
+		toolkit = Toolkit.getDefaultToolkit();
+	
+		// actually perform gui change of text for each second
+		timer = new javax.swing.Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	if(counter > -1) {
+            		counterLabel.setText("" + counter);
+            		counter--;
+            	}
+            	else {
+                	((Timer) e.getSource()).stop();
+                	timer.stop();
+            	}
+            }
+            
+        });
+        timer.start(); // begin countdown
+        
+        timer = new javax.swing.Timer(1000, new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		if(minimizeDelay > -1) {
+        			minimizeDelay--;
+        		}
+        		if(minimizeDelay == 0) {}
+        		else {
+        			frame.setState(Frame.ICONIFIED);
+        			toolkit.beep();
+        	        counterLabel.setText("Bot is currently running....");
+        			frame.revalidate();
+        			((Timer) e.getSource()).stop();
+                	timer.stop();
+        		}
+        	}
+        });
+        timer.setInitialDelay(6000);
+        timer.start();
+		frame.revalidate();
 		
 		
+		// ***************** WIP - Need synchronization *********************************//
 		
-		counterLabel.setText("5");
+//        timer = new javax.swing.Timer(1000, new ActionListener() {
+//        	public void actionPerformed(ActionEvent e) {
+//        		if(counter < Integer.MAX_VALUE) {
+//        			toolkit.beep();
+//        			System.out.println("" + counter);
+//        			guiLooper(counterLabel);
+//        			counter++;
+//        		}
+//        		else
+//        			counter = Integer.MIN_VALUE;
+//        	}
+//        });
+//        timer.setInitialDelay(7000);
+//		timer.start();
 		
+		// ***************************************************************************** // 
 		
-		// begin countdown
-		for(int i = 5; i >= 0; i--) {
-			timer.wait(1, 200);
-			counterLabel.setText("" + i);
-			frame.revalidate();
-		}
 	}
-	
-	
-	
+
+
+	/**
+	 * Method to loop the gui during bot execution to signal that it is still running
+	 * @param counterLabel - Current JLabel being used for the gui during bot execution
+	 */
+	public static void guiLooper(final JLabel counterLabel) {
+        switch(loopCount) {
+           	case 2:
+          		counterLabel.setText("Bot is currently running...");
+           		loopCount--;
+           		break;
+          	case 1:
+           		counterLabel.setText("Bot is currently running..");
+           		loopCount--;
+           		break;
+           	case 0:
+           		counterLabel.setText("Bot is currently running...");
+           		loopCount--;
+           		break;
+           	case -1:
+           		counterLabel.setText("Bot is currently running....");
+           		loopCount--;
+           		break;
+           	default:
+           		loopCount = 2;
+           		break;
+        }
+           	
+	}
+           
 }
