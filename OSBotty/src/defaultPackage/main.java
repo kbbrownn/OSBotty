@@ -5,10 +5,16 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.MouseInfo;
+import java.awt.PointerInfo;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -35,14 +41,17 @@ public class main {
 	static int width = 0;
 	static int height = 0;
 	static boolean done = false;
+	static Thread mt;
+	static volatile boolean stop = false;
 
 	public static void main(String[] args) throws AWTException, IOException, InterruptedException {
 		
+		mt = Thread.currentThread();
 		Robot mouse = new Robot();
 		final JFrame frame = new JFrame("OSBotty");
 		JLabel emptyLabel = new JLabel("");
 	//	final JLabel firstLabel = new JLabel("<html>" + "Place OSBotty on the same screen as RuneScape and click next." + "</html>");
-		final JLabel firstLabel = new JLabel ("Placeholder");
+		final JLabel firstLabel = new JLabel ("<html>" + "Placeholder" + "</html>");
 		URL url = new URL("http://static-cdn.jtvnw.net/jtv_user_pictures/chansub-global-emoticon-60aa1af305e32d49-23x30.png");
 		BufferedImage icon = ImageIO.read(url);
 		final JPanel pnlCheck = new JPanel();
@@ -70,15 +79,20 @@ public class main {
 			public void actionPerformed(ActionEvent e) {
 				try {
 					beginCountdown(frame, pnlCounter, counterLabel, pnlCheck, firstLabel);
-					MyRunnable myRunnable = new MyRunnable();
-					final Thread bt = new Thread(myRunnable);
-					botTimer = new javax.swing.Timer(1000, new ActionListener() {
+//					MyRunnable myRunnable = new MyRunnable();
+//					final Thread bt = new Thread(myRunnable);
+					botTimer = new javax.swing.Timer(0, new ActionListener() {
 			            @Override
 			            public void actionPerformed(ActionEvent e) {
-			            	System.out.println("should be in bot");
+			            	try {
+								beginBot();
+							} catch (AWTException | InterruptedException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
 			            } 
 			        });
-					botTimer.setInitialDelay(7500);
+					botTimer.setInitialDelay(8000);
 			        botTimer.start(); // begin bot
 
 					
@@ -153,8 +167,7 @@ public class main {
         		if(minimizeDelay == 0) {}
         		else {
         			frame.setState(Frame.ICONIFIED);
-        			toolkit.beep();
-        	        counterLabel.setText("Bot is currently running....");
+        	        counterLabel.setText("<html>" + "Bot is currently running...." + "</html>");
         			frame.revalidate();
         			((Timer) e.getSource()).stop();
                 	timer.stop();
@@ -171,8 +184,6 @@ public class main {
         guiTimer = new javax.swing.Timer(1000, new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(counter < Integer.MAX_VALUE) {
-        			toolkit.beep();
-        			System.out.println("" + counter);
         			guiLooper(counterLabel);
         			counter++;
         		}
@@ -194,19 +205,19 @@ public class main {
 	public static void guiLooper(final JLabel counterLabel) {
         switch(loopCount) {
            	case 2:
-          		counterLabel.setText("Bot is currently running...");
+          		counterLabel.setText("<html>" + "Bot is currently running..." + "</html>");
            		loopCount--;
            		break;
           	case 1:
-           		counterLabel.setText("Bot is currently running..");
+           		counterLabel.setText("<html>" + "Bot is currently running.." + "</html>");
            		loopCount--;
            		break;
            	case 0:
-           		counterLabel.setText("Bot is currently running...");
+           		counterLabel.setText("<html>" + "Bot is currently running..." + "</html>");
            		loopCount--;
            		break;
            	case -1:
-           		counterLabel.setText("Bot is currently running....");
+           		counterLabel.setText("<html>" + "Bot is currently running...." + "</html>");
            		loopCount--;
            		break;
            	default:
@@ -216,31 +227,58 @@ public class main {
            	
 	}
 	
-	public static class MyRunnable implements Runnable {
-
-		@Override
-		public void run() {
-			try {
-				beginBot();
-			} catch (AWTException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
+//	public static class MyRunnable implements Runnable {
+//
+//		@Override
+//		public void run() {
+//			try {
+//				beginBot();
+//			} catch (AWTException | InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
+//	}
 	
-	public static void beginBot() throws AWTException {
+//	public void mouseWheel(MouseEvent e) {
+//		if(e.getButton() == MouseEvent.MOUSE_WHEEL)
+//			stop = true;
+//	}
+	
+	public static void beginBot() throws AWTException, InterruptedException {
 		Robot robot = new Robot();
 		int[][] screen = new int[width][height];
 //		System.out.printf("Current screen position: %d x %d\n", width, height);
 		long start = System.nanoTime();
-		for(int i = 0; i < width; i+= 5) {
-			for(int j = 0; j < height; j+= 5) {
-				System.out.printf("Current screen position: %d x %d\n", i, j);
+		Rectangle rec = new Rectangle(width, height);
+		
+		// at the moment, capture screen once and iterate over that
+		BufferedImage currentScreen = robot.createScreenCapture(rec);
+		PointerInfo pointPos = MouseInfo.getPointerInfo();
+		int pointColor = currentScreen.getRGB(pointPos.getLocation().x, pointPos.getLocation().y);
+		System.out.println("color captured -- bot sleeping");
+		mt.sleep(1000);
+		System.out.println("bot starting -- begin scan");
+		boolean done = false;
+		for(int i = 0; i < width && !done; i+=10) {
+			for(int j = 0; j < height && !done; j+=10) {
+				System.out.printf("current pos: %dx%d\n", i, j);
+//				// could rebuffer screen cap each pixel -- extremely slow
+//				currentScreen = robot.createScreenCapture(rec);
+				if(currentScreen.getRGB(i, j) == pointColor) {
+					System.out.printf("current pos: %dx%d", i, j);
+					robot.mouseMove(i, j);
+					robot.mousePress(InputEvent.BUTTON1_MASK);
+					robot.delay(3);
+					robot.mouseRelease(InputEvent.BUTTON1_MASK);
+					done = true;
+				}
 			}
 		}
+		robot.delay(10000);
 		long end = System.nanoTime();
-		System.out.printf("time to do complete sweep: %d", (end - start) / 1000000000);
+		System.out.printf("time to complete first match: %d\n", (end - start) / 1000000000);
+		mt.sleep(10000);
 	}
            
 	
