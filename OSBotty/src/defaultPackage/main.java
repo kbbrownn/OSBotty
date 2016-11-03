@@ -12,8 +12,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
@@ -25,17 +23,26 @@ import javax.swing.Timer;
 
 public class main {
 	
+//	private static final class Lock { }
+//	private final static Object lock = new Lock();
+	
 	static int counter = 5;
 	static int minimizeDelay = 1;
 	static int loopCount = 2;
 	static javax.swing.Timer timer = null;
+	static javax.swing.Timer botTimer = null;
+	static javax.swing.Timer guiTimer = null;
+	static int width = 0;
+	static int height = 0;
+	static boolean done = false;
 
 	public static void main(String[] args) throws AWTException, IOException, InterruptedException {
 		
 		Robot mouse = new Robot();
 		final JFrame frame = new JFrame("OSBotty");
 		JLabel emptyLabel = new JLabel("");
-		final JLabel firstLabel = new JLabel("<html>" + "Place OSBotty on the same screen as RuneScape and click next." + "</html>");
+	//	final JLabel firstLabel = new JLabel("<html>" + "Place OSBotty on the same screen as RuneScape and click next." + "</html>");
+		final JLabel firstLabel = new JLabel ("Placeholder");
 		URL url = new URL("http://static-cdn.jtvnw.net/jtv_user_pictures/chansub-global-emoticon-60aa1af305e32d49-23x30.png");
 		BufferedImage icon = ImageIO.read(url);
 		final JPanel pnlCheck = new JPanel();
@@ -63,6 +70,18 @@ public class main {
 			public void actionPerformed(ActionEvent e) {
 				try {
 					beginCountdown(frame, pnlCounter, counterLabel, pnlCheck, firstLabel);
+					MyRunnable myRunnable = new MyRunnable();
+					final Thread bt = new Thread(myRunnable);
+					botTimer = new javax.swing.Timer(1000, new ActionListener() {
+			            @Override
+			            public void actionPerformed(ActionEvent e) {
+			            	System.out.println("should be in bot");
+			            } 
+			        });
+					botTimer.setInitialDelay(7500);
+			        botTimer.start(); // begin bot
+
+					
 				} catch (InterruptedException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -76,8 +95,8 @@ public class main {
 		
 		// get current screen properties
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-		int width = gd.getDisplayMode().getWidth();
-		int height = gd.getDisplayMode().getHeight();	
+		width = gd.getDisplayMode().getWidth();
+		height = gd.getDisplayMode().getHeight();	
 	}
 
 	
@@ -91,6 +110,8 @@ public class main {
 	 * @throws InterruptedException - Throw exception if process is interrupted mid execution
 	 */
 	public static void beginCountdown(final JFrame frame, JPanel pnlCounter, final JLabel counterLabel, JPanel pnlCheck, JLabel firstLabel) throws InterruptedException {
+		
+		//lock.wait();
 
 		final Toolkit toolkit;
 		
@@ -104,6 +125,7 @@ public class main {
 		frame.getContentPane().remove(firstLabel);
 		frame.add(pnlCounter);
 		frame.revalidate();
+		frame.repaint();
 		
 		toolkit = Toolkit.getDefaultToolkit();
 	
@@ -115,7 +137,7 @@ public class main {
             		counterLabel.setText("" + counter);
             		counter--;
             	}
-            	else {
+				else {
                 	((Timer) e.getSource()).stop();
                 	timer.stop();
             	}
@@ -123,7 +145,6 @@ public class main {
             
         });
         timer.start(); // begin countdown
-        
         timer = new javax.swing.Timer(1000, new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(minimizeDelay > -1) {
@@ -145,24 +166,23 @@ public class main {
 		frame.revalidate();
 		
 		
-		// ***************** WIP - Need synchronization *********************************//
 		
-//        timer = new javax.swing.Timer(1000, new ActionListener() {
-//        	public void actionPerformed(ActionEvent e) {
-//        		if(counter < Integer.MAX_VALUE) {
-//        			toolkit.beep();
-//        			System.out.println("" + counter);
-//        			guiLooper(counterLabel);
-//        			counter++;
-//        		}
-//        		else
-//        			counter = Integer.MIN_VALUE;
-//        	}
-//        });
-//        timer.setInitialDelay(7000);
-//		timer.start();
 		
-		// ***************************************************************************** // 
+        guiTimer = new javax.swing.Timer(1000, new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		if(counter < Integer.MAX_VALUE) {
+        			toolkit.beep();
+        			System.out.println("" + counter);
+        			guiLooper(counterLabel);
+        			counter++;
+        		}
+        		else
+        			counter = Integer.MIN_VALUE;
+        	}
+        });
+        guiTimer.setInitialDelay(7000);
+		guiTimer.start();
+	
 		
 	}
 
@@ -195,5 +215,64 @@ public class main {
         }
            	
 	}
+	
+	public static class MyRunnable implements Runnable {
+
+		@Override
+		public void run() {
+			try {
+				beginBot();
+			} catch (AWTException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static void beginBot() throws AWTException {
+		Robot robot = new Robot();
+		int[][] screen = new int[width][height];
+//		System.out.printf("Current screen position: %d x %d\n", width, height);
+		long start = System.nanoTime();
+		for(int i = 0; i < width; i+= 5) {
+			for(int j = 0; j < height; j+= 5) {
+				System.out.printf("Current screen position: %d x %d\n", i, j);
+			}
+		}
+		long end = System.nanoTime();
+		System.out.printf("time to do complete sweep: %d", (end - start) / 1000000000);
+	}
            
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
