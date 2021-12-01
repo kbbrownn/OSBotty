@@ -205,19 +205,19 @@ public class main {
 	public static void guiLooper(final JLabel counterLabel) {
         switch(loopCount) {
            	case 2:
-          		counterLabel.setText("<html>" + "Bot is currently running..." + "</html>");
+          		counterLabel.setText("<html>" + "Bot is currently running...." + "</html>");
            		loopCount--;
            		break;
           	case 1:
-           		counterLabel.setText("<html>" + "Bot is currently running.." + "</html>");
-           		loopCount--;
-           		break;
-           	case 0:
            		counterLabel.setText("<html>" + "Bot is currently running..." + "</html>");
            		loopCount--;
            		break;
+           	case 0:
+           		counterLabel.setText("<html>" + "Bot is currently running.." + "</html>");
+           		loopCount--;
+           		break;
            	case -1:
-           		counterLabel.setText("<html>" + "Bot is currently running...." + "</html>");
+           		counterLabel.setText("<html>" + "Bot is currently running." + "</html>");
            		loopCount--;
            		break;
            	default:
